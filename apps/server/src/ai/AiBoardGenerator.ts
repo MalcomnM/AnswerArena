@@ -14,8 +14,9 @@ export class AiBoardGenerator {
   async generateBoard(
     difficulty: 'easy' | 'medium' | 'hard' = 'medium',
     categories?: string[],
+    customPrompt?: string,
   ): Promise<Board> {
-    const userPrompt = buildUserPrompt(difficulty, categories);
+    const userPrompt = buildUserPrompt(difficulty, categories, customPrompt);
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {

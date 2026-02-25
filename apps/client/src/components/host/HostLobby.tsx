@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Player, Board } from '@answer-arena/shared';
 import { BoardPreview } from './BoardPreview';
+import { BoardGeneratorForm } from './BoardGeneratorForm';
 
 interface Props {
   roomCode: string;
@@ -15,6 +16,7 @@ export function HostLobby({ roomCode, hostPin, players, onStartGame, boardLoaded
   const [loading, setLoading] = useState(false);
   const [board, setBoard] = useState<Board | null>(null);
   const [activeTab, setActiveTab] = useState<'board' | 'players'>('board');
+  const [showGenerator, setShowGenerator] = useState(false);
 
   useEffect(() => {
     if (boardLoaded && !board) {
@@ -34,43 +36,10 @@ export function HostLobby({ roomCode, hostPin, players, onStartGame, boardLoaded
     }
   };
 
-  const loadSampleBoard = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/board/sample', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomCode }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setBoard(data.board);
-      }
-    } catch (err) {
-      console.error('Failed to load board:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateAiBoard = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/board/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomCode, difficulty: 'medium' }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setBoard(data.board);
-      }
-    } catch (err) {
-      console.error('Failed to generate board:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleBoardGenerated = useCallback((newBoard: Board) => {
+    setBoard(newBoard);
+    setShowGenerator(false);
+  }, []);
 
   const handleRegenerate = useCallback(async () => {
     setLoading(true);
@@ -92,15 +61,22 @@ export function HostLobby({ roomCode, hostPin, players, onStartGame, boardLoaded
   }, [roomCode]);
 
   const handleRegenerateCategory = useCallback(async (_categoryIndex: number) => {
-    // For MVP, regenerate the whole board; per-category regeneration is a stretch goal
     await handleRegenerate();
   }, [handleRegenerate]);
 
+  const handleBoardChange = useCallback((updatedBoard: Board) => {
+    setBoard(updatedBoard);
+  }, []);
+
+  const handleNewBoard = useCallback(() => {
+    setShowGenerator(true);
+  }, []);
+
   const boardReady = !!board;
+  const showForm = !boardReady || showGenerator;
 
   return (
     <div style={styles.container}>
-      {/* Header with room code + PIN */}
       <div style={styles.headerSection}>
         <h2 style={styles.title}>Lobby</h2>
         <div style={styles.codeSection}>
@@ -116,7 +92,6 @@ export function HostLobby({ roomCode, hostPin, players, onStartGame, boardLoaded
         </button>
       </div>
 
-      {/* Tab bar */}
       <div style={styles.tabBar}>
         <button
           style={{ ...styles.tab, ...(activeTab === 'board' ? styles.tabActive : {}) }}
@@ -132,42 +107,29 @@ export function HostLobby({ roomCode, hostPin, players, onStartGame, boardLoaded
         </button>
       </div>
 
-      {/* Board tab */}
       {activeTab === 'board' && (
         <div style={styles.tabContent}>
-          {!boardReady ? (
-            <div style={styles.boardActions}>
-              <p style={styles.boardHint}>Load a board to review questions before starting.</p>
-              <button
-                style={styles.actionBtn}
-                onClick={loadSampleBoard}
-                disabled={loading}
-                data-testid="load-sample-board"
-              >
-                {loading ? 'Loading...' : 'Load Sample Board'}
-              </button>
-              <button
-                style={{ ...styles.actionBtn, background: 'var(--correct-green)' }}
-                onClick={generateAiBoard}
-                disabled={loading}
-                data-testid="generate-ai-board"
-              >
-                {loading ? 'Generating...' : 'Generate AI Board'}
-              </button>
-            </div>
+          {showForm ? (
+            <BoardGeneratorForm
+              roomCode={roomCode}
+              onBoardGenerated={handleBoardGenerated}
+              loading={loading}
+              onLoadingChange={setLoading}
+            />
           ) : (
             <BoardPreview
               board={board!}
               roomCode={roomCode}
               onRegenerate={handleRegenerate}
               onRegenerateCategory={handleRegenerateCategory}
+              onBoardChange={handleBoardChange}
+              onNewBoard={handleNewBoard}
               loading={loading}
             />
           )}
         </div>
       )}
 
-      {/* Players tab */}
       {activeTab === 'players' && (
         <div style={styles.tabContent}>
           <div style={styles.playerSection}>
@@ -182,7 +144,6 @@ export function HostLobby({ roomCode, hostPin, players, onStartGame, boardLoaded
         </div>
       )}
 
-      {/* Start Game button (always visible at bottom) */}
       <div style={styles.footer}>
         {!boardReady && <p style={styles.footerHint}>Load a board first</p>}
         {boardReady && players.length === 0 && <p style={styles.footerHint}>Waiting for players...</p>}

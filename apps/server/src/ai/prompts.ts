@@ -12,6 +12,13 @@ Rules:
 - Each clue should be self-contained and unambiguous
 - Difficulty should increase with value (200 = easiest, 1000 = hardest)
 
+Category naming rules (VERY IMPORTANT):
+- Category names MUST be clever, punny, and Jeopardy!-style
+- Use wordplay, puns, alliteration, double meanings, and pop culture references
+- Examples of GOOD names: "POT-POURRI", "BEFORE & AFTER", "SCIENCE FRICTION", "LET'S GET PHYSICAL", "RHYME TIME", "STARTS WITH A BANG", "THE YEAR OF LIVING DANGEROUSLY"
+- Examples of BAD names: "Science", "History", "Geography", "Movies", "Food"
+- Never use plain, generic one-word category names — always make them creative and fun
+
 JSON Schema:
 {
   "gameTitle": string,
@@ -35,9 +42,22 @@ JSON Schema:
 export function buildUserPrompt(
   difficulty: string,
   categories?: string[],
+  customPrompt?: string,
 ): string {
+  const parts: string[] = [];
+
   if (categories && categories.length > 0) {
-    return `Generate a ${difficulty} difficulty Jeopardy board using these categories: ${categories.join(', ')}. Ensure exactly 6 categories and 5 clues per category.`;
+    parts.push(`Generate a ${difficulty} difficulty Jeopardy board using these categories: ${categories.join(', ')}.`);
+  } else {
+    parts.push(`Generate a ${difficulty} difficulty Jeopardy board with 6 interesting and diverse categories.`);
   }
-  return `Generate a ${difficulty} difficulty Jeopardy board with 6 interesting and diverse categories. Ensure exactly 6 categories and 5 clues per category.`;
+
+  parts.push('Ensure exactly 6 categories and 5 clues per category.');
+  parts.push('Remember: category names must be clever and Jeopardy!-style — use puns, wordplay, and creative titles.');
+
+  if (customPrompt && customPrompt.trim()) {
+    parts.push(`\nAdditional instructions from the host: ${customPrompt.trim()}`);
+  }
+
+  return parts.join(' ');
 }

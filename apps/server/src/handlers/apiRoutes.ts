@@ -1,5 +1,6 @@
 import type { Express } from 'express';
 import type { Board, AiBoardResponse } from '@answer-arena/shared';
+import { CLUE_VALUES, CATEGORIES_COUNT, CLUES_PER_CATEGORY } from '@answer-arena/shared';
 import { RoomManager } from '../modules/RoomManager.js';
 import { AiBoardGenerator } from '../ai/AiBoardGenerator.js';
 import { SAMPLE_BOARD } from '../ai/sampleBoard.js';
@@ -24,13 +25,14 @@ export function registerApiRoutes(app: Express, roomManager: RoomManager): void 
 
   app.post('/api/board/generate', async (req, res) => {
     try {
-      const { roomCode, difficulty, categories } = req.body as {
+      const { roomCode, difficulty, categories, customPrompt } = req.body as {
         roomCode?: string;
         difficulty?: 'easy' | 'medium' | 'hard';
         categories?: string[];
+        customPrompt?: string;
       };
 
-      const board = await boardGenerator.generateBoard(difficulty ?? 'medium', categories);
+      const board = await boardGenerator.generateBoard(difficulty ?? 'medium', categories, customPrompt);
 
       if (roomCode) {
         const success = roomManager.setBoard(roomCode, board);
@@ -69,5 +71,44 @@ export function registerApiRoutes(app: Express, roomManager: RoomManager): void 
       return;
     }
     res.json({ board: room.board });
+  });
+
+  app.put('/api/board/:roomCode', (req, res) => {
+    const { board } = req.body as { board?: Board };
+    if (!board || !board.categories) {
+      res.status(400).json({ error: 'Invalid board data' });
+      return;
+    }
+
+    if (board.categories.length !== CATEGORIES_COUNT) {
+      res.status(400).json({ error: `Board must have exactly ${CATEGORIES_COUNT} categories` });
+      return;
+    }
+
+    for (const cat of board.categories) {
+      if (!cat.name || cat.clues.length !== CLUES_PER_CATEGORY) {
+        res.status(400).json({ error: `Each category must have a name and exactly ${CLUES_PER_CATEGORY} clues` });
+        return;
+      }
+      const values = cat.clues.map(c => c.value).sort((a, b) => a - b);
+      if (JSON.stringify(values) !== JSON.stringify([...CLUE_VALUES])) {
+        res.status(400).json({ error: `Each category must have one clue for each value: ${CLUE_VALUES.join(', ')}` });
+        return;
+      }
+    }
+
+    const room = roomManager.getRoom(req.params.roomCode!);
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    const success = roomManager.setBoard(req.params.roomCode!, board);
+    if (!success) {
+      res.status(500).json({ error: 'Failed to save board' });
+      return;
+    }
+
+    res.json({ board });
   });
 }

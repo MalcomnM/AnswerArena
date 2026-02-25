@@ -21,6 +21,7 @@ export interface Board {
 export interface BoardGenerationRequest {
   categories?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
+  customPrompt?: string;
 }
 
 export interface AiBoardResponse {
