@@ -26,6 +26,7 @@ interface GameState {
   buzzerWinner: BuzzerWinnerPayload | null;
   buzzerOpen: boolean;
   buzzerTimerMs: number;
+  buzzerDurationMs: number;
   judgingTimerMs: number;
   judgeResult: JudgeResultPayload | null;
   gameOver: GameOverPayload | null;
@@ -54,6 +55,7 @@ const initialState: GameState = {
   buzzerWinner: null,
   buzzerOpen: false,
   buzzerTimerMs: 0,
+  buzzerDurationMs: 0,
   judgingTimerMs: 0,
   judgeResult: null,
   gameOver: null,
@@ -84,13 +86,13 @@ function reducer(state: GameState, action: GameStateAction): GameState {
       };
     }
     case 'CLUE_SELECTED':
-      return { ...state, selectedClue: action.payload, revealedClue: null, fullClueData: null, buzzerWinner: null, buzzerOpen: false, judgingTimerMs: 0, judgeResult: null, revealedAnswer: null };
+      return { ...state, selectedClue: action.payload, revealedClue: null, fullClueData: null, buzzerWinner: null, buzzerOpen: false, buzzerDurationMs: 0, judgingTimerMs: 0, judgeResult: null, revealedAnswer: null };
     case 'CLUE_REVEALED':
       return { ...state, revealedClue: action.payload };
     case 'FULL_CLUE_DATA':
       return { ...state, fullClueData: action.payload };
     case 'BUZZER_OPENED':
-      return { ...state, buzzerOpen: true, buzzerTimerMs: action.payload.timerRemainingMs, buzzerWinner: null, judgingTimerMs: 0 };
+      return { ...state, buzzerOpen: true, buzzerTimerMs: action.payload.timerRemainingMs, buzzerDurationMs: action.payload.timerDurationMs, buzzerWinner: null, judgingTimerMs: 0 };
     case 'BUZZER_WINNER':
       return { ...state, buzzerWinner: action.payload, buzzerOpen: false };
     case 'BUZZER_CLOSED':
@@ -104,7 +106,7 @@ function reducer(state: GameState, action: GameStateAction): GameState {
     case 'GAME_OVER':
       return { ...state, gameOver: action.payload };
     case 'RESET_CLUE':
-      return { ...state, revealedClue: null, fullClueData: null, buzzerWinner: null, buzzerOpen: false, judgingTimerMs: 0, judgeResult: null, selectedClue: null, revealedAnswer: null };
+      return { ...state, revealedClue: null, fullClueData: null, buzzerWinner: null, buzzerOpen: false, buzzerDurationMs: 0, judgingTimerMs: 0, judgeResult: null, selectedClue: null, revealedAnswer: null };
     default:
       return state;
   }

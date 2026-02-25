@@ -110,6 +110,7 @@ export interface ClueFullDataPayload {
 
 export interface BuzzerOpenedPayload {
   timerRemainingMs: number;
+  timerDurationMs: number;
 }
 
 export interface BuzzerAttemptPayload {

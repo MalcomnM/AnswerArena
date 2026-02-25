@@ -116,6 +116,7 @@ export function HostPage() {
           revealedClue={gameState.revealedClue}
           buzzerOpen={gameState.buzzerOpen}
           buzzerTimerMs={gameState.buzzerTimerMs}
+          buzzerDurationMs={gameState.buzzerDurationMs}
           revealedAnswer={gameState.revealedAnswer}
           onRevealClue={handleRevealClue}
           onSkipClue={handleSkipClue}

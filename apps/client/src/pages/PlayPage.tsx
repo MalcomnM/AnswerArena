@@ -121,9 +121,9 @@ export function PlayPage() {
         playerId={playerId}
       />
 
-      {showBuzzTimer && (
+      {showBuzzTimer && gameState.buzzerDurationMs > 0 && (
         <CircularTimer
-          durationMs={gameState.revealedClue!.timerDurationMs}
+          durationMs={gameState.buzzerDurationMs}
           remainingMs={gameState.buzzerTimerMs > 0 ? gameState.buzzerTimerMs : undefined}
           size={72}
         />

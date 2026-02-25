@@ -7,6 +7,7 @@ interface Props {
   revealedClue: ClueRevealedPayload | null;
   buzzerOpen: boolean;
   buzzerTimerMs: number;
+  buzzerDurationMs: number;
   revealedAnswer: string | null;
   onRevealClue: () => void;
   onSkipClue: () => void;
@@ -20,6 +21,7 @@ export function ClueControls({
   revealedClue,
   buzzerOpen,
   buzzerTimerMs,
+  buzzerDurationMs,
   revealedAnswer,
   onRevealClue,
   onSkipClue,
@@ -30,9 +32,9 @@ export function ClueControls({
 
   return (
     <div style={styles.container}>
-      {showTimer && (
+      {showTimer && buzzerDurationMs > 0 && (
         <CircularTimer
-          durationMs={revealedClue!.timerDurationMs}
+          durationMs={buzzerDurationMs}
           remainingMs={buzzerTimerMs > 0 ? buzzerTimerMs : undefined}
           size={80}
         />

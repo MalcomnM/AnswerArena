@@ -79,6 +79,7 @@ export function BoardPage() {
             judgeResult={gameState.judgeResult}
             phase={phase}
             buzzerTimerMs={gameState.buzzerTimerMs}
+            buzzerDurationMs={gameState.buzzerDurationMs}
             judgingTimerMs={gameState.judgingTimerMs}
             revealedAnswer={gameState.revealedAnswer}
           />

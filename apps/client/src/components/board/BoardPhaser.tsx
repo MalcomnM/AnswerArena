@@ -18,14 +18,17 @@ interface Props {
   judgeResult: JudgeResultPayload | null;
   phase: GamePhase;
   buzzerTimerMs: number;
+  buzzerDurationMs: number;
   judgingTimerMs: number;
   revealedAnswer: string | null;
 }
 
-export function BoardPhaser({ board, revealedClue, selectedClue, buzzerWinner, judgeResult, phase, buzzerTimerMs, judgingTimerMs, revealedAnswer }: Props) {
+export function BoardPhaser({ board, revealedClue, selectedClue, buzzerWinner, judgeResult, phase, buzzerTimerMs, buzzerDurationMs, judgingTimerMs, revealedAnswer }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<BoardScene | null>(null);
+  const boardRef = useRef<PublicBoard | null>(board);
+  boardRef.current = board;
 
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
@@ -47,7 +50,9 @@ export function BoardPhaser({ board, revealedClue, selectedClue, buzzerWinner, j
     gameRef.current = game;
 
     game.events.on('ready', () => {
-      sceneRef.current = game.scene.getScene('BoardScene') as BoardScene;
+      const scene = game.scene.getScene('BoardScene') as BoardScene;
+      sceneRef.current = scene;
+      scene.updateBoard(boardRef.current);
     });
 
     return () => {
@@ -70,7 +75,6 @@ export function BoardPhaser({ board, revealedClue, selectedClue, buzzerWinner, j
 
     if (revealedClue) {
       scene.showClueReveal(revealedClue.clueText, revealedClue.value);
-      scene.startTimer(revealedClue.timerDurationMs);
     } else if (phase === 'BOARD') {
       scene.hideClueReveal();
     }
@@ -78,10 +82,11 @@ export function BoardPhaser({ board, revealedClue, selectedClue, buzzerWinner, j
 
   useEffect(() => {
     const scene = sceneRef.current ?? (gameRef.current?.scene.getScene('BoardScene') as BoardScene | undefined);
-    if (scene && buzzerTimerMs > 0) {
+    if (scene && buzzerTimerMs > 0 && buzzerDurationMs > 0) {
+      scene.startTimer(buzzerDurationMs);
       scene.syncTimer(buzzerTimerMs);
     }
-  }, [buzzerTimerMs]);
+  }, [buzzerTimerMs, buzzerDurationMs]);
 
   useEffect(() => {
     const scene = sceneRef.current ?? (gameRef.current?.scene.getScene('BoardScene') as BoardScene | undefined);

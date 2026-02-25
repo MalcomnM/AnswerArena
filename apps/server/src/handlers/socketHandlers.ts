@@ -91,7 +91,8 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
           ? newState.activeClue.timerDurationMs - (Date.now() - newState.activeClue.timerStartedAt)
           : newState.settings.timerDurationMs;
 
-        io.to(room.roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs) });
+        const buzzerDurationMs = newState.activeClue?.timerDurationMs ?? newState.settings.timerDurationMs;
+        io.to(room.roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs), timerDurationMs: buzzerDurationMs });
         io.to(room.roomCode).emit('room:state_update', roomManager.toPublicState(newState));
         scheduleTimerExpiry(io, roomManager, room.roomCode, Math.max(0, timerRemainingMs));
       } catch (err) {
@@ -111,7 +112,8 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
           ? newState.activeClue.timerDurationMs - (Date.now() - newState.activeClue.timerStartedAt)
           : newState.settings.timerDurationMs;
 
-        io.to(room.roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs) });
+        const buzzerDurationMs = newState.activeClue?.timerDurationMs ?? newState.settings.timerDurationMs;
+        io.to(room.roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs), timerDurationMs: buzzerDurationMs });
         io.to(room.roomCode).emit('room:state_update', roomManager.toPublicState(newState));
 
         scheduleTimerExpiry(io, roomManager, room.roomCode, Math.max(0, timerRemainingMs));
@@ -155,7 +157,8 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
           const timerRemainingMs = newState.activeClue
             ? newState.activeClue.timerDurationMs - (Date.now() - newState.activeClue.timerStartedAt)
             : 0;
-          io.to(room.roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs) });
+          const buzzerDurationMs = newState.activeClue?.timerDurationMs ?? 0;
+          io.to(room.roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs), timerDurationMs: buzzerDurationMs });
           scheduleTimerExpiry(io, roomManager, room.roomCode, Math.max(0, timerRemainingMs));
         }
 
@@ -406,7 +409,8 @@ function scheduleJudgingTimerExpiry(
         const timerRemainingMs = newState.activeClue
           ? newState.activeClue.timerDurationMs - (Date.now() - newState.activeClue.timerStartedAt)
           : 0;
-        io.to(roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs) });
+        const buzzerDurationMs = newState.activeClue?.timerDurationMs ?? 0;
+        io.to(roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs), timerDurationMs: buzzerDurationMs });
         scheduleTimerExpiry(io, roomManager, roomCode, Math.max(0, timerRemainingMs));
       }
 

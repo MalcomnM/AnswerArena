@@ -139,7 +139,11 @@ export function transition(state: RoomState, action: GameAction): RoomState {
 
       const lockedOutIds = [...(state.buzzerState?.lockedOutIds ?? []), playerId];
 
-      if (reopenBuzzing && state.settings.reopenOnIncorrect) {
+      const playerIds = Object.keys(state.players);
+      const remainingPlayers = playerIds.filter(id => !lockedOutIds.includes(id));
+      const shouldReopen = reopenBuzzing && state.settings.reopenOnIncorrect && remainingPlayers.length > 0;
+
+      if (shouldReopen) {
         const buzzerState: BuzzerState = {
           isOpen: true,
           buzzOrder: state.buzzerState?.buzzOrder ?? [],

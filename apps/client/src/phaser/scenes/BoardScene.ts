@@ -140,6 +140,7 @@ export class BoardScene extends Phaser.Scene {
   }
 
   showClueReveal(clueText: string, value: number) {
+    if (this.isShowingClue) return;
     this.isShowingClue = true;
     const w = this.scale.width;
     const h = this.scale.height;
