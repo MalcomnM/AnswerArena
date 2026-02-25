@@ -36,6 +36,8 @@ export interface ActiveClue {
   clue: ClueData;
   timerStartedAt: number;
   timerDurationMs: number;
+  judgingTimerStartedAt: number;
+  judgingTimerDurationMs: number;
 }
 
 export interface GameSettings {

@@ -7,6 +7,7 @@ import { BuzzButton } from '../components/player/BuzzButton';
 import { PlayerStatus } from '../components/player/PlayerStatus';
 import { CircularTimer } from '../components/common/CircularTimer';
 import type { PlayerBuzzAck } from '@answer-arena/shared';
+import { ANSWER_TIMER_MS } from '@answer-arena/shared';
 
 export function PlayPage() {
   const { socket, connected } = useSocket();
@@ -107,7 +108,8 @@ export function PlayPage() {
   const isMyBuzz = gameState.buzzerWinner?.playerId === playerId;
   const canBuzz = phase === 'BUZZING_OPEN' && gameState.buzzerOpen && !buzzResult;
   const clueText = gameState.revealedClue?.clueText;
-  const showTimer = phase === 'BUZZING_OPEN' && gameState.revealedClue;
+  const showBuzzTimer = phase === 'BUZZING_OPEN' && gameState.revealedClue;
+  const showJudgingTimer = phase === 'JUDGING' && gameState.judgingTimerMs > 0;
 
   return (
     <div style={styles.playerContainer}>
@@ -119,10 +121,18 @@ export function PlayPage() {
         playerId={playerId}
       />
 
-      {showTimer && (
+      {showBuzzTimer && (
         <CircularTimer
           durationMs={gameState.revealedClue!.timerDurationMs}
           remainingMs={gameState.buzzerTimerMs > 0 ? gameState.buzzerTimerMs : undefined}
+          size={72}
+        />
+      )}
+
+      {showJudgingTimer && (
+        <CircularTimer
+          durationMs={ANSWER_TIMER_MS}
+          remainingMs={gameState.judgingTimerMs}
           size={72}
         />
       )}

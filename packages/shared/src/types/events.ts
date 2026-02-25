@@ -138,6 +138,10 @@ export interface GameOverPayload {
   finalScores: Record<string, number>;
 }
 
+export interface JudgingTimerStartedPayload {
+  durationMs: number;
+}
+
 export interface AnswerRevealedPayload {
   answer: string;
 }
@@ -178,6 +182,7 @@ export interface ServerToClientEvents {
   'buzzer:winner': (payload: BuzzerWinnerPayload) => void;
   'buzzer:closed': (payload: BuzzerClosedPayload) => void;
   'judge:result': (payload: JudgeResultPayload) => void;
+  'judging:timer_started': (payload: JudgingTimerStartedPayload) => void;
   'answer:revealed': (payload: AnswerRevealedPayload) => void;
   'game:over': (payload: GameOverPayload) => void;
   'error': (payload: GameErrorPayload) => void;

@@ -18,10 +18,11 @@ interface Props {
   judgeResult: JudgeResultPayload | null;
   phase: GamePhase;
   buzzerTimerMs: number;
+  judgingTimerMs: number;
   revealedAnswer: string | null;
 }
 
-export function BoardPhaser({ board, revealedClue, selectedClue, buzzerWinner, judgeResult, phase, buzzerTimerMs, revealedAnswer }: Props) {
+export function BoardPhaser({ board, revealedClue, selectedClue, buzzerWinner, judgeResult, phase, buzzerTimerMs, judgingTimerMs, revealedAnswer }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<BoardScene | null>(null);
@@ -81,6 +82,16 @@ export function BoardPhaser({ board, revealedClue, selectedClue, buzzerWinner, j
       scene.syncTimer(buzzerTimerMs);
     }
   }, [buzzerTimerMs]);
+
+  useEffect(() => {
+    const scene = sceneRef.current ?? (gameRef.current?.scene.getScene('BoardScene') as BoardScene | undefined);
+    if (!scene) return;
+    if (judgingTimerMs > 0) {
+      scene.startJudgingTimer(judgingTimerMs);
+    } else if (phase !== 'BUZZING_OPEN') {
+      scene.stopJudgingTimer();
+    }
+  }, [judgingTimerMs, phase]);
 
   useEffect(() => {
     const scene = sceneRef.current ?? (gameRef.current?.scene.getScene('BoardScene') as BoardScene | undefined);

@@ -1,4 +1,5 @@
 import type { GamePhase, RoomState, ActiveClue, BuzzerState } from '@answer-arena/shared';
+import { ANSWER_TIMER_MS } from '@answer-arena/shared';
 
 export type GameAction =
   | { type: 'HOST_START_GAME' }
@@ -7,6 +8,7 @@ export type GameAction =
   | { type: 'HOST_OPEN_BUZZING' }
   | { type: 'FIRST_BUZZ'; playerId: string; serverTimestamp: number }
   | { type: 'TIMER_EXPIRED' }
+  | { type: 'JUDGING_TIMER_EXPIRED' }
   | { type: 'HOST_JUDGE_CORRECT'; playerId: string }
   | { type: 'HOST_JUDGE_INCORRECT'; playerId: string; reopenBuzzing: boolean }
   | { type: 'HOST_SKIP_CLUE' }
@@ -26,7 +28,7 @@ const VALID_TRANSITIONS: Record<GamePhase, string[]> = {
   CLUE_REVEALED: ['HOST_OPEN_BUZZING', 'HOST_SKIP_CLUE'],
   BUZZING_OPEN: ['FIRST_BUZZ', 'TIMER_EXPIRED', 'HOST_SKIP_CLUE'],
   BUZZING_CLOSED: [],
-  JUDGING: ['HOST_JUDGE_CORRECT', 'HOST_JUDGE_INCORRECT', 'HOST_SKIP_CLUE'],
+  JUDGING: ['HOST_JUDGE_CORRECT', 'HOST_JUDGE_INCORRECT', 'JUDGING_TIMER_EXPIRED', 'HOST_SKIP_CLUE'],
   ANSWER_REVEAL: ['HOST_RETURN_TO_BOARD', 'HOST_SKIP_CLUE'],
   GAME_OVER: [],
 };
@@ -66,6 +68,8 @@ export function transition(state: RoomState, action: GameAction): RoomState {
         clue,
         timerStartedAt: 0,
         timerDurationMs: state.settings.timerDurationMs,
+        judgingTimerStartedAt: 0,
+        judgingTimerDurationMs: 0,
       };
 
       return { ...base, phase: 'CLUE_SELECTED', activeClue, buzzerState: null };
@@ -98,7 +102,10 @@ export function transition(state: RoomState, action: GameAction): RoomState {
           { playerId: action.playerId, serverTimestamp: action.serverTimestamp },
         ],
       };
-      return { ...base, phase: 'JUDGING', buzzerState };
+      const activeClue = state.activeClue
+        ? { ...state.activeClue, judgingTimerStartedAt: now, judgingTimerDurationMs: ANSWER_TIMER_MS }
+        : state.activeClue;
+      return { ...base, phase: 'JUDGING', buzzerState, activeClue };
     }
 
     case 'TIMER_EXPIRED': {
@@ -140,7 +147,47 @@ export function transition(state: RoomState, action: GameAction): RoomState {
           lockedOutIds,
         };
         const activeClue = state.activeClue
-          ? { ...state.activeClue, timerStartedAt: now }
+          ? { ...state.activeClue, timerStartedAt: now, timerDurationMs: ANSWER_TIMER_MS }
+          : state.activeClue;
+        return { ...base, players, phase: 'BUZZING_OPEN', buzzerState, activeClue };
+      }
+
+      const buzzerState: BuzzerState = {
+        ...(state.buzzerState ?? { buzzOrder: [], isOpen: false }),
+        winnerId: null,
+        lockedOutIds,
+      };
+      return { ...base, players, phase: 'ANSWER_REVEAL', buzzerState };
+    }
+
+    case 'JUDGING_TIMER_EXPIRED': {
+      const winnerId = state.buzzerState?.winnerId;
+      const value = state.activeClue?.clue.value ?? 0;
+      const players = { ...state.players };
+      if (winnerId) {
+        const player = players[winnerId];
+        if (player && state.settings.penaltyEnabled) {
+          players[winnerId] = { ...player, score: player.score - value };
+        }
+      }
+
+      const lockedOutIds = winnerId
+        ? [...(state.buzzerState?.lockedOutIds ?? []), winnerId]
+        : (state.buzzerState?.lockedOutIds ?? []);
+
+      const playerIds = Object.keys(state.players);
+      const remainingPlayers = playerIds.filter(id => !lockedOutIds.includes(id));
+      const reopenBuzzing = remainingPlayers.length > 0 && state.settings.reopenOnIncorrect;
+
+      if (reopenBuzzing) {
+        const buzzerState: BuzzerState = {
+          isOpen: true,
+          buzzOrder: state.buzzerState?.buzzOrder ?? [],
+          winnerId: null,
+          lockedOutIds,
+        };
+        const activeClue = state.activeClue
+          ? { ...state.activeClue, timerStartedAt: now, timerDurationMs: ANSWER_TIMER_MS }
           : state.activeClue;
         return { ...base, players, phase: 'BUZZING_OPEN', buzzerState, activeClue };
       }

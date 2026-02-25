@@ -301,6 +301,15 @@ export class BoardScene extends Phaser.Scene {
     }
   }
 
+  startJudgingTimer(durationMs: number) {
+    this.stopTimer();
+    this.startTimer(durationMs);
+  }
+
+  stopJudgingTimer() {
+    this.stopTimer();
+  }
+
   showAnswer(answer: string) {
     if (this.answerText) {
       const w = this.scale.width;

@@ -14,6 +14,7 @@ import type {
   RoomPlayerJoinedPayload,
   ClueSelectedPayload,
   AnswerRevealedPayload,
+  JudgingTimerStartedPayload,
 } from '@answer-arena/shared';
 
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -25,6 +26,7 @@ interface GameState {
   buzzerWinner: BuzzerWinnerPayload | null;
   buzzerOpen: boolean;
   buzzerTimerMs: number;
+  judgingTimerMs: number;
   judgeResult: JudgeResultPayload | null;
   gameOver: GameOverPayload | null;
   selectedClue: ClueSelectedPayload | null;
@@ -40,6 +42,7 @@ type GameStateAction =
   | { type: 'BUZZER_WINNER'; payload: BuzzerWinnerPayload }
   | { type: 'BUZZER_CLOSED'; payload: BuzzerClosedPayload }
   | { type: 'JUDGE_RESULT'; payload: JudgeResultPayload }
+  | { type: 'JUDGING_TIMER_STARTED'; payload: JudgingTimerStartedPayload }
   | { type: 'ANSWER_REVEALED'; payload: AnswerRevealedPayload }
   | { type: 'GAME_OVER'; payload: GameOverPayload }
   | { type: 'RESET_CLUE' };
@@ -51,6 +54,7 @@ const initialState: GameState = {
   buzzerWinner: null,
   buzzerOpen: false,
   buzzerTimerMs: 0,
+  judgingTimerMs: 0,
   judgeResult: null,
   gameOver: null,
   selectedClue: null,
@@ -71,6 +75,7 @@ function reducer(state: GameState, action: GameStateAction): GameState {
               fullClueData: null,
               buzzerWinner: null,
               buzzerOpen: false,
+              judgingTimerMs: 0,
               judgeResult: null,
               selectedClue: null,
               revealedAnswer: null,
@@ -79,25 +84,27 @@ function reducer(state: GameState, action: GameStateAction): GameState {
       };
     }
     case 'CLUE_SELECTED':
-      return { ...state, selectedClue: action.payload, revealedClue: null, fullClueData: null, buzzerWinner: null, buzzerOpen: false, judgeResult: null, revealedAnswer: null };
+      return { ...state, selectedClue: action.payload, revealedClue: null, fullClueData: null, buzzerWinner: null, buzzerOpen: false, judgingTimerMs: 0, judgeResult: null, revealedAnswer: null };
     case 'CLUE_REVEALED':
       return { ...state, revealedClue: action.payload };
     case 'FULL_CLUE_DATA':
       return { ...state, fullClueData: action.payload };
     case 'BUZZER_OPENED':
-      return { ...state, buzzerOpen: true, buzzerTimerMs: action.payload.timerRemainingMs, buzzerWinner: null };
+      return { ...state, buzzerOpen: true, buzzerTimerMs: action.payload.timerRemainingMs, buzzerWinner: null, judgingTimerMs: 0 };
     case 'BUZZER_WINNER':
       return { ...state, buzzerWinner: action.payload, buzzerOpen: false };
     case 'BUZZER_CLOSED':
       return { ...state, buzzerOpen: false };
     case 'JUDGE_RESULT':
-      return { ...state, judgeResult: action.payload };
+      return { ...state, judgeResult: action.payload, judgingTimerMs: 0 };
+    case 'JUDGING_TIMER_STARTED':
+      return { ...state, judgingTimerMs: action.payload.durationMs };
     case 'ANSWER_REVEALED':
       return { ...state, revealedAnswer: action.payload.answer };
     case 'GAME_OVER':
       return { ...state, gameOver: action.payload };
     case 'RESET_CLUE':
-      return { ...state, revealedClue: null, fullClueData: null, buzzerWinner: null, buzzerOpen: false, judgeResult: null, selectedClue: null, revealedAnswer: null };
+      return { ...state, revealedClue: null, fullClueData: null, buzzerWinner: null, buzzerOpen: false, judgingTimerMs: 0, judgeResult: null, selectedClue: null, revealedAnswer: null };
     default:
       return state;
   }
@@ -118,6 +125,7 @@ export function useGameState(socket: TypedSocket | null) {
       'buzzer:winner': (p: BuzzerWinnerPayload) => dispatch({ type: 'BUZZER_WINNER', payload: p }),
       'buzzer:closed': (p: BuzzerClosedPayload) => dispatch({ type: 'BUZZER_CLOSED', payload: p }),
       'judge:result': (p: JudgeResultPayload) => dispatch({ type: 'JUDGE_RESULT', payload: p }),
+      'judging:timer_started': (p: JudgingTimerStartedPayload) => dispatch({ type: 'JUDGING_TIMER_STARTED', payload: p }),
       'answer:revealed': (p: AnswerRevealedPayload) => dispatch({ type: 'ANSWER_REVEALED', payload: p }),
       'game:over': (p: GameOverPayload) => dispatch({ type: 'GAME_OVER', payload: p }),
     } as const;

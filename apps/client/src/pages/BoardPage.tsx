@@ -79,6 +79,7 @@ export function BoardPage() {
             judgeResult={gameState.judgeResult}
             phase={phase}
             buzzerTimerMs={gameState.buzzerTimerMs}
+            judgingTimerMs={gameState.judgingTimerMs}
             revealedAnswer={gameState.revealedAnswer}
           />
           <ScoreBar players={rs?.players ? Object.values(rs.players) : []} />

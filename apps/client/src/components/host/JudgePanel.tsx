@@ -1,17 +1,28 @@
 import { useState } from 'react';
 import type { BuzzerWinnerPayload, ClueFullDataPayload } from '@answer-arena/shared';
+import { ANSWER_TIMER_MS } from '@answer-arena/shared';
+import { CircularTimer } from '../common/CircularTimer';
 
 interface Props {
   winner: BuzzerWinnerPayload;
   fullClueData: ClueFullDataPayload | null;
+  judgingTimerMs: number;
   onJudge: (correct: boolean, reopenBuzzing?: boolean) => void;
 }
 
-export function JudgePanel({ winner, fullClueData, onJudge }: Props) {
+export function JudgePanel({ winner, fullClueData, judgingTimerMs, onJudge }: Props) {
   const [reopenToggle, setReopenToggle] = useState(true);
 
   return (
     <div style={styles.container} data-testid="judge-panel">
+      {judgingTimerMs > 0 && (
+        <CircularTimer
+          durationMs={ANSWER_TIMER_MS}
+          remainingMs={judgingTimerMs}
+          size={80}
+        />
+      )}
+
       <div style={styles.responderBox}>
         <p style={styles.responderLabel}>Responding:</p>
         <p style={styles.responderName} data-testid="responder-name">{winner.displayName}</p>

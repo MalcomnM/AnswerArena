@@ -128,6 +128,7 @@ export function HostPage() {
         <JudgePanel
           winner={gameState.buzzerWinner}
           fullClueData={gameState.fullClueData}
+          judgingTimerMs={gameState.judgingTimerMs}
           onJudge={handleJudge}
         />
       )}

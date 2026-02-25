@@ -1,5 +1,6 @@
 import type { Server, Socket } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents } from '@answer-arena/shared';
+import { ANSWER_TIMER_MS } from '@answer-arena/shared';
 import { RoomManager } from '../modules/RoomManager.js';
 import { transition } from '../modules/GameStateMachine.js';
 import { receiveBuzz } from '../modules/BuzzerAdjudicator.js';
@@ -123,6 +124,8 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
       const room = findHostRoom(socket);
       if (!room || !room.buzzerState?.winnerId) return;
 
+      cancelJudgingTimer(room.roomCode);
+
       const playerId = room.buzzerState.winnerId;
       const player = room.players[playerId];
       const value = room.activeClue?.clue.value ?? 0;
@@ -154,6 +157,12 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
             : 0;
           io.to(room.roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs) });
           scheduleTimerExpiry(io, roomManager, room.roomCode, Math.max(0, timerRemainingMs));
+        }
+
+        if (newState.phase === 'ANSWER_REVEAL' && newState.activeClue) {
+          io.to(room.roomCode).emit('answer:revealed', {
+            answer: newState.activeClue.clue.answer,
+          });
         }
 
         io.to(room.roomCode).emit('room:state_update', roomManager.toPublicState(newState));
@@ -285,6 +294,10 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
           displayName: winner?.displayName ?? 'Unknown',
         });
         io.to(room.roomCode).emit('buzzer:closed', { reason: 'won' });
+
+        io.to(room.roomCode).emit('judging:timer_started', { durationMs: ANSWER_TIMER_MS });
+        scheduleJudgingTimerExpiry(io, roomManager, room.roomCode, ANSWER_TIMER_MS);
+
         io.to(room.roomCode).emit('room:state_update', roomManager.toPublicState(newState));
 
         if (newState.activeClue) {
@@ -350,6 +363,67 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
 }
 
 const activeTimers = new Map<string, NodeJS.Timeout>();
+const activeJudgingTimers = new Map<string, NodeJS.Timeout>();
+
+function cancelJudgingTimer(roomCode: string): void {
+  const existing = activeJudgingTimers.get(roomCode);
+  if (existing) {
+    clearTimeout(existing);
+    activeJudgingTimers.delete(roomCode);
+  }
+}
+
+function scheduleJudgingTimerExpiry(
+  io: TypedServer,
+  roomManager: RoomManager,
+  roomCode: string,
+  durationMs: number,
+): void {
+  cancelJudgingTimer(roomCode);
+
+  const timer = setTimeout(() => {
+    activeJudgingTimers.delete(roomCode);
+    const room = roomManager.getRoom(roomCode);
+    if (!room || room.phase !== 'JUDGING') return;
+
+    const winnerId = room.buzzerState?.winnerId;
+    const value = room.activeClue?.clue.value ?? 0;
+
+    try {
+      const newState = transition(room, { type: 'JUDGING_TIMER_EXPIRED' });
+      roomManager.setRoom(roomCode, newState);
+
+      if (winnerId) {
+        io.to(roomCode).emit('judge:result', {
+          correct: false,
+          playerId: winnerId,
+          scoreChange: room.settings.penaltyEnabled ? -value : 0,
+          newScore: newState.players[winnerId]?.score ?? 0,
+        });
+      }
+
+      if (newState.phase === 'BUZZING_OPEN') {
+        const timerRemainingMs = newState.activeClue
+          ? newState.activeClue.timerDurationMs - (Date.now() - newState.activeClue.timerStartedAt)
+          : 0;
+        io.to(roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs) });
+        scheduleTimerExpiry(io, roomManager, roomCode, Math.max(0, timerRemainingMs));
+      }
+
+      if (newState.phase === 'ANSWER_REVEAL' && newState.activeClue) {
+        io.to(roomCode).emit('answer:revealed', {
+          answer: newState.activeClue.clue.answer,
+        });
+      }
+
+      io.to(roomCode).emit('room:state_update', roomManager.toPublicState(newState));
+    } catch {
+      // Judging timer expired but state already changed
+    }
+  }, durationMs);
+
+  activeJudgingTimers.set(roomCode, timer);
+}
 
 function scheduleTimerExpiry(
   io: TypedServer,
@@ -369,6 +443,13 @@ function scheduleTimerExpiry(
       const newState = transition(room, { type: 'TIMER_EXPIRED' });
       roomManager.setRoom(roomCode, newState);
       io.to(roomCode).emit('buzzer:closed', { reason: 'timeout' });
+
+      if (newState.phase === 'ANSWER_REVEAL' && newState.activeClue) {
+        io.to(roomCode).emit('answer:revealed', {
+          answer: newState.activeClue.clue.answer,
+        });
+      }
+
       io.to(roomCode).emit('room:state_update', roomManager.toPublicState(newState));
     } catch {
       // Timer expired but state already changed
