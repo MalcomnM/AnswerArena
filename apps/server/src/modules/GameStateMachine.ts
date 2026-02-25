@@ -139,7 +139,10 @@ export function transition(state: RoomState, action: GameAction): RoomState {
           winnerId: null,
           lockedOutIds,
         };
-        return { ...base, players, phase: 'BUZZING_OPEN', buzzerState };
+        const activeClue = state.activeClue
+          ? { ...state.activeClue, timerStartedAt: now }
+          : state.activeClue;
+        return { ...base, players, phase: 'BUZZING_OPEN', buzzerState, activeClue };
       }
 
       const buzzerState: BuzzerState = {
