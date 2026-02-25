@@ -64,7 +64,7 @@ export function transition(state: RoomState, action: GameAction): RoomState {
         categoryIndex,
         clueIndex,
         clue,
-        timerStartedAt: now,
+        timerStartedAt: 0,
         timerDurationMs: state.settings.timerDurationMs,
       };
 
@@ -82,7 +82,10 @@ export function transition(state: RoomState, action: GameAction): RoomState {
         winnerId: null,
         lockedOutIds: [],
       };
-      return { ...base, phase: 'BUZZING_OPEN', buzzerState };
+      const activeClue = state.activeClue
+        ? { ...state.activeClue, timerStartedAt: now }
+        : state.activeClue;
+      return { ...base, phase: 'BUZZING_OPEN', buzzerState, activeClue };
     }
 
     case 'FIRST_BUZZ': {

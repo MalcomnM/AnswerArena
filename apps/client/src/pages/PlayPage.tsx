@@ -107,7 +107,7 @@ export function PlayPage() {
   const isMyBuzz = gameState.buzzerWinner?.playerId === playerId;
   const canBuzz = phase === 'BUZZING_OPEN' && gameState.buzzerOpen && !buzzResult;
   const clueText = gameState.revealedClue?.clueText;
-  const showTimer = (phase === 'CLUE_REVEALED' || phase === 'BUZZING_OPEN') && gameState.revealedClue;
+  const showTimer = phase === 'BUZZING_OPEN' && gameState.revealedClue;
 
   return (
     <div style={styles.playerContainer}>

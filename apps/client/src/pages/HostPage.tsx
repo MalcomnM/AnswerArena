@@ -36,11 +36,6 @@ export function HostPage() {
     socket.emit('host:reveal_clue', {});
   }, [socket]);
 
-  const handleOpenBuzzing = useCallback(() => {
-    if (!socket) return;
-    socket.emit('host:open_buzzing', {});
-  }, [socket]);
-
   const handleJudge = useCallback((correct: boolean, reopenBuzzing?: boolean) => {
     if (!socket) return;
     socket.emit('host:judge', { correct, reopenBuzzing });
@@ -123,7 +118,6 @@ export function HostPage() {
           buzzerTimerMs={gameState.buzzerTimerMs}
           revealedAnswer={gameState.revealedAnswer}
           onRevealClue={handleRevealClue}
-          onOpenBuzzing={handleOpenBuzzing}
           onSkipClue={handleSkipClue}
           onShowAnswer={handleShowAnswer}
           onReturnToBoard={handleReturnToBoard}

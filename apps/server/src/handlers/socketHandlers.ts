@@ -74,7 +74,8 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
       if (!room) return;
 
       try {
-        const newState = transition(room, { type: 'HOST_REVEAL_CLUE' });
+        let newState = transition(room, { type: 'HOST_REVEAL_CLUE' });
+        newState = transition(newState, { type: 'HOST_OPEN_BUZZING' });
         roomManager.setRoom(room.roomCode, newState);
 
         if (newState.activeClue) {
@@ -85,7 +86,13 @@ export function registerSocketHandlers(io: TypedServer, roomManager: RoomManager
           });
         }
 
+        const timerRemainingMs = newState.activeClue
+          ? newState.activeClue.timerDurationMs - (Date.now() - newState.activeClue.timerStartedAt)
+          : newState.settings.timerDurationMs;
+
+        io.to(room.roomCode).emit('buzzer:opened', { timerRemainingMs: Math.max(0, timerRemainingMs) });
         io.to(room.roomCode).emit('room:state_update', roomManager.toPublicState(newState));
+        scheduleTimerExpiry(io, roomManager, room.roomCode, Math.max(0, timerRemainingMs));
       } catch (err) {
         socket.emit('error', { code: 'INVALID_TRANSITION', message: String(err) });
       }

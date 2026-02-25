@@ -9,7 +9,6 @@ interface Props {
   buzzerTimerMs: number;
   revealedAnswer: string | null;
   onRevealClue: () => void;
-  onOpenBuzzing: () => void;
   onSkipClue: () => void;
   onShowAnswer: () => void;
   onReturnToBoard: () => void;
@@ -23,12 +22,11 @@ export function ClueControls({
   buzzerTimerMs,
   revealedAnswer,
   onRevealClue,
-  onOpenBuzzing,
   onSkipClue,
   onShowAnswer,
   onReturnToBoard,
 }: Props) {
-  const showTimer = (phase === 'CLUE_REVEALED' || phase === 'BUZZING_OPEN') && revealedClue;
+  const showTimer = phase === 'BUZZING_OPEN' && revealedClue;
 
   return (
     <div style={styles.container}>
@@ -58,17 +56,7 @@ export function ClueControls({
       <div style={styles.buttons}>
         {phase === 'CLUE_SELECTED' && (
           <button style={styles.actionBtn} onClick={onRevealClue} data-testid="reveal-clue-btn">
-            Reveal to TV
-          </button>
-        )}
-
-        {phase === 'CLUE_REVEALED' && !buzzerOpen && (
-          <button
-            style={{ ...styles.actionBtn, background: 'var(--correct-green)' }}
-            onClick={onOpenBuzzing}
-            data-testid="open-buzzing-btn"
-          >
-            Open Buzzing
+            Reveal and Start
           </button>
         )}
 
