@@ -1,0 +1,28 @@
+{
+  "name": "answer-arena",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Jeopardy!-style party game with AI-generated questions",
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"pnpm --filter @answer-arena/server dev\" \"pnpm --filter @answer-arena/client dev\"",
+    "build": "pnpm --filter @answer-arena/shared build && pnpm --filter @answer-arena/server build && pnpm --filter @answer-arena/client build",
+    "test": "vitest run --config vitest.config.ts",
+    "test:e2e": "playwright test --config tests/e2e/playwright.config.ts",
+    "test:all": "pnpm test && pnpm test:e2e",
+    "lint": "eslint . --ext .ts,.tsx",
+    "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@types/node": "^22.0.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
